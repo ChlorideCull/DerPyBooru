@@ -24,7 +24,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from requests import get, codes
+import re
+from requests import codes
 from sys import version_info
 from .helpers import format_params, join_params
 
@@ -48,9 +49,10 @@ def url(params):
   return url
 
 def request(params):
+  session = params["session"]
   search, p = "https://derpibooru.org/search.json", format_params(params)
 
-  request = get(search, params=p)
+  request = session.get(search, params=p)
 
   while request.status_code == codes.ok:
     images, image_count = request.json()["search"], 0
@@ -62,10 +64,14 @@ def request(params):
 
     p["page"] += 1
 
-    request = get(search, params=p)
+    request = session.get(search, params=p)
 
 def get_images(parameters, limit=50):
+  session = parameters["session"]
   params = join_params(parameters, {"perpage": 50, "page": 1})
+
+  if parameters["filter"] is not None:
+    set_site_filter(session, parameters["filter"])
 
   if limit is not None:
     l = limit
@@ -80,10 +86,10 @@ def get_images(parameters, limit=50):
     for image in r:
       yield image
 
-def get_image_data(id_number):
+def get_image_data(session, id_number):
   url = "https://derpibooru.org/{}.json?fav=&comments=".format(id_number)
 
-  request = get(url)
+  request = session.get(url)
 
   if request.status_code == codes.ok:
     data = request.json()
@@ -93,3 +99,15 @@ def get_image_data(id_number):
     else:
       return data
 
+def set_site_filter(session, filter_id):
+  spoofrequest = session.get("https://derpibooru.org/filters")  # Contacted Clover, hopefully won't need this later
+  spoofdata = {"_method": "patch"}
+  if spoofrequest.status_code == codes.ok:
+    csrfnameregex = '<meta name="csrf-param" content="(.+?)"\/>'  # I know, regex and HTML
+    csrfregex = '<meta name="csrf-token" content="(.+?)"\/>'  # I am the devil reincarnate
+    spoofdata[re.match(csrfnameregex, spoofrequest.text).group(0)] = re.match(csrfregex, spoofrequest.text).group(0)
+  else:
+    return False
+  url = "https://derpibooru.org/filters/select?id={}".format(filter_id)
+  remoterequest = session.post(url, data=spoofdata)
+  return remoterequest.status_code == codes.found or remoterequest.status_code == codes.ok

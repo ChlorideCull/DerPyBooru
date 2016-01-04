@@ -38,7 +38,8 @@ class Image(object):
   its own property. Once instantiated the data is immutable so as to reflect
   the stateless nature of a REST API
   """
-  def __init__(self, data):
+  def __init__(self, session, data):
+    self._session = session
     self._data = data
 
     for field, body in data.items():
@@ -133,7 +134,7 @@ class Image(object):
     return self._data
 
   def update(self):
-    data = get_image_data(self.id_number)
+    data = get_image_data(self._session, self.id_number)
 
     if data:
       self._data = data

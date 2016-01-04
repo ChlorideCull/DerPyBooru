@@ -25,7 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from sys import version_info
-
+from requests import Session
 from .request import get_images, url
 from .image import Image
 from .helpers import tags, api_key, sort_format, join_params, user_option, set_limit
@@ -43,13 +43,15 @@ class Search(object):
   interactions predictable as well as making versioning of searches relatively
   easy.
   """
-  def __init__(self, key="", q={}, sf="created_at", sd="desc", limit=50,
+  def __init__(self, session=Session(), filter=None, key="", q={}, sf="created_at", sd="desc", limit=50,
                faves="", upvotes="", uploads="", watched=""):
     """
     By default initializes an instance of Search with the parameters to get
     the first 50 images on Derpibooru's front page.
     """
     self._params = {
+      "session": session,
+      "filter": filter,
       "key": api_key(key),
       "q": tags(q),
       "sf": sort_format(sf),
@@ -176,12 +178,20 @@ class Search(object):
 
     return self.__class__(**params)
 
+  def filter(self, id):
+    """
+    Set the filter to use by ID.
+    """
+    params = join_params(self.parameters, {"filter": id})
+
+    return self.__class__(**params)
+
 if version_info < (3, 0):
   def next(self):
     """
     Returns a result wrapped in a new instance of Image().
     """
-    return Image(self._search.next())
+    return Image(self._params["session"], self._search.next())
 
   Search.next = next
 
@@ -190,7 +200,7 @@ else:
     """
     Returns a result wrapped in a new instance of Image().
     """
-    return Image(next(self._search))
+    return Image(self._params["session"], next(self._search))
 
   Search.__next__ = __next__
 

@@ -70,6 +70,8 @@ def format_params(params):
         p[key] = value
     elif key == "q":
       p["q"] = ",".join(value) if value else "*"
+    elif key in ("session", "filter"):
+      continue
     else:
       p[key] = value
 
