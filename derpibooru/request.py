@@ -105,7 +105,7 @@ def set_site_filter(session, filter_id):
   if spoofrequest.status_code == codes.ok:
     csrfnameregex = '<meta name="csrf-param" content="(.+?)"\/>'  # I know, regex and HTML
     csrfregex = '<meta name="csrf-token" content="(.+?)"\/>'  # I am the devil reincarnate
-    spoofdata[re.match(csrfnameregex, spoofrequest.text).group(0)] = re.match(csrfregex, spoofrequest.text).group(0)
+    spoofdata[re.search(csrfnameregex, spoofrequest.text).group(1)] = re.search(csrfregex, spoofrequest.text).group(1)
   else:
     return False
   url = "https://derpibooru.org/filters/select?id={}".format(filter_id)
