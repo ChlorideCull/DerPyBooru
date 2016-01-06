@@ -57,6 +57,7 @@ def request(params):
   while request.status_code == codes.ok:
     images, image_count = request.json()["search"], 0
     for image in images:
+      image["scope"] = {"total": request.json()["total"], "this": image_count+1}
       yield image
       image_count += 1
     if image_count < 50:

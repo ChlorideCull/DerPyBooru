@@ -44,11 +44,7 @@ class Image(object):
 
     for field, body in data.items():
       if not hasattr(self, field):
-        setattr(self, field, body) 
-
-    if self.original_format == "gif":
-      setattr(self, "webm", self.representations["webm"])
-      setattr(self, "mp4", self.representations["mp4"])
+        setattr(self, field, body)
 
 
   def __str__(self):
